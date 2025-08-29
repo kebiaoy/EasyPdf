@@ -14,6 +14,11 @@
 		2A3C074D2E619690000AFA74 /* EasyPdfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C074C2E619690000AFA74 /* EasyPdfTests.swift */; };
 		2A3C07572E619690000AFA74 /* EasyPdfUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C07562E619690000AFA74 /* EasyPdfUITests.swift */; };
 		2A3C07592E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C07582E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift */; };
+		2A3C07682E61AC72000AFA74 /* BookshelfViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C07672E61AC72000AFA74 /* BookshelfViews.swift */; };
+		2A3C076A2E61AC7A000AFA74 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C07692E61AC7A000AFA74 /* DataManager.swift */; };
+		2A3C076C2E61AC91000AFA74 /* MainLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C076B2E61AC91000AFA74 /* MainLayout.swift */; };
+		2A3C076E2E61AC9E000AFA74 /* TabModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C076D2E61AC9E000AFA74 /* TabModels.swift */; };
+		2A3C07702E61ACAE000AFA74 /* WorkspaceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C076F2E61ACAE000AFA74 /* WorkspaceViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +50,11 @@
 		2A3C07522E619690000AFA74 /* EasyPdfUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EasyPdfUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A3C07562E619690000AFA74 /* EasyPdfUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyPdfUITests.swift; sourceTree = "<group>"; };
 		2A3C07582E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyPdfUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		2A3C07672E61AC72000AFA74 /* BookshelfViews.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookshelfViews.swift; sourceTree = "<group>"; };
+		2A3C07692E61AC7A000AFA74 /* DataManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		2A3C076B2E61AC91000AFA74 /* MainLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainLayout.swift; sourceTree = "<group>"; };
+		2A3C076D2E61AC9E000AFA74 /* TabModels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabModels.swift; sourceTree = "<group>"; };
+		2A3C076F2E61ACAE000AFA74 /* WorkspaceViews.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkspaceViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +105,11 @@
 		2A3C07392E61968D000AFA74 /* EasyPdf */ = {
 			isa = PBXGroup;
 			children = (
+				2A3C076F2E61ACAE000AFA74 /* WorkspaceViews.swift */,
+				2A3C076D2E61AC9E000AFA74 /* TabModels.swift */,
+				2A3C076B2E61AC91000AFA74 /* MainLayout.swift */,
+				2A3C07692E61AC7A000AFA74 /* DataManager.swift */,
+				2A3C07672E61AC72000AFA74 /* BookshelfViews.swift */,
 				2A3C073A2E61968D000AFA74 /* EasyPdfApp.swift */,
 				2A3C073C2E61968D000AFA74 /* ContentView.swift */,
 				2A3C073E2E619690000AFA74 /* Assets.xcassets */,
@@ -259,6 +274,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2A3C07702E61ACAE000AFA74 /* WorkspaceViews.swift in Sources */,
+				2A3C076C2E61AC91000AFA74 /* MainLayout.swift in Sources */,
+				2A3C076E2E61AC9E000AFA74 /* TabModels.swift in Sources */,
+				2A3C07682E61AC72000AFA74 /* BookshelfViews.swift in Sources */,
+				2A3C076A2E61AC7A000AFA74 /* DataManager.swift in Sources */,
 				2A3C073D2E61968D000AFA74 /* ContentView.swift in Sources */,
 				2A3C073B2E61968D000AFA74 /* EasyPdfApp.swift in Sources */,
 			);
