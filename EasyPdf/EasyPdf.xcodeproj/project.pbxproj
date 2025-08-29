@@ -1,0 +1,578 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2A3C073B2E61968D000AFA74 /* EasyPdfApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C073A2E61968D000AFA74 /* EasyPdfApp.swift */; };
+		2A3C073D2E61968D000AFA74 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C073C2E61968D000AFA74 /* ContentView.swift */; };
+		2A3C073F2E619690000AFA74 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A3C073E2E619690000AFA74 /* Assets.xcassets */; };
+		2A3C07422E619690000AFA74 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A3C07412E619690000AFA74 /* Preview Assets.xcassets */; };
+		2A3C074D2E619690000AFA74 /* EasyPdfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C074C2E619690000AFA74 /* EasyPdfTests.swift */; };
+		2A3C07572E619690000AFA74 /* EasyPdfUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C07562E619690000AFA74 /* EasyPdfUITests.swift */; };
+		2A3C07592E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3C07582E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2A3C07492E619690000AFA74 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2A3C072F2E61968D000AFA74 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2A3C07362E61968D000AFA74;
+			remoteInfo = EasyPdf;
+		};
+		2A3C07532E619690000AFA74 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2A3C072F2E61968D000AFA74 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2A3C07362E61968D000AFA74;
+			remoteInfo = EasyPdf;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		2A3C07372E61968D000AFA74 /* EasyPdf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EasyPdf.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A3C073A2E61968D000AFA74 /* EasyPdfApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyPdfApp.swift; sourceTree = "<group>"; };
+		2A3C073C2E61968D000AFA74 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2A3C073E2E619690000AFA74 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2A3C07412E619690000AFA74 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		2A3C07432E619690000AFA74 /* EasyPdf.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EasyPdf.entitlements; sourceTree = "<group>"; };
+		2A3C07482E619690000AFA74 /* EasyPdfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EasyPdfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A3C074C2E619690000AFA74 /* EasyPdfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyPdfTests.swift; sourceTree = "<group>"; };
+		2A3C07522E619690000AFA74 /* EasyPdfUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EasyPdfUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A3C07562E619690000AFA74 /* EasyPdfUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyPdfUITests.swift; sourceTree = "<group>"; };
+		2A3C07582E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EasyPdfUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2A3C07342E61968D000AFA74 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A3C07452E619690000AFA74 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A3C074F2E619690000AFA74 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2A3C072E2E61968D000AFA74 = {
+			isa = PBXGroup;
+			children = (
+				2A3C07392E61968D000AFA74 /* EasyPdf */,
+				2A3C074B2E619690000AFA74 /* EasyPdfTests */,
+				2A3C07552E619690000AFA74 /* EasyPdfUITests */,
+				2A3C07382E61968D000AFA74 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2A3C07382E61968D000AFA74 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2A3C07372E61968D000AFA74 /* EasyPdf.app */,
+				2A3C07482E619690000AFA74 /* EasyPdfTests.xctest */,
+				2A3C07522E619690000AFA74 /* EasyPdfUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2A3C07392E61968D000AFA74 /* EasyPdf */ = {
+			isa = PBXGroup;
+			children = (
+				2A3C073A2E61968D000AFA74 /* EasyPdfApp.swift */,
+				2A3C073C2E61968D000AFA74 /* ContentView.swift */,
+				2A3C073E2E619690000AFA74 /* Assets.xcassets */,
+				2A3C07432E619690000AFA74 /* EasyPdf.entitlements */,
+				2A3C07402E619690000AFA74 /* Preview Content */,
+			);
+			path = EasyPdf;
+			sourceTree = "<group>";
+		};
+		2A3C07402E619690000AFA74 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				2A3C07412E619690000AFA74 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		2A3C074B2E619690000AFA74 /* EasyPdfTests */ = {
+			isa = PBXGroup;
+			children = (
+				2A3C074C2E619690000AFA74 /* EasyPdfTests.swift */,
+			);
+			path = EasyPdfTests;
+			sourceTree = "<group>";
+		};
+		2A3C07552E619690000AFA74 /* EasyPdfUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2A3C07562E619690000AFA74 /* EasyPdfUITests.swift */,
+				2A3C07582E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift */,
+			);
+			path = EasyPdfUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2A3C07362E61968D000AFA74 /* EasyPdf */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2A3C075C2E619690000AFA74 /* Build configuration list for PBXNativeTarget "EasyPdf" */;
+			buildPhases = (
+				2A3C07332E61968D000AFA74 /* Sources */,
+				2A3C07342E61968D000AFA74 /* Frameworks */,
+				2A3C07352E61968D000AFA74 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = EasyPdf;
+			productName = EasyPdf;
+			productReference = 2A3C07372E61968D000AFA74 /* EasyPdf.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2A3C07472E619690000AFA74 /* EasyPdfTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2A3C075F2E619690000AFA74 /* Build configuration list for PBXNativeTarget "EasyPdfTests" */;
+			buildPhases = (
+				2A3C07442E619690000AFA74 /* Sources */,
+				2A3C07452E619690000AFA74 /* Frameworks */,
+				2A3C07462E619690000AFA74 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2A3C074A2E619690000AFA74 /* PBXTargetDependency */,
+			);
+			name = EasyPdfTests;
+			productName = EasyPdfTests;
+			productReference = 2A3C07482E619690000AFA74 /* EasyPdfTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		2A3C07512E619690000AFA74 /* EasyPdfUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2A3C07622E619690000AFA74 /* Build configuration list for PBXNativeTarget "EasyPdfUITests" */;
+			buildPhases = (
+				2A3C074E2E619690000AFA74 /* Sources */,
+				2A3C074F2E619690000AFA74 /* Frameworks */,
+				2A3C07502E619690000AFA74 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2A3C07542E619690000AFA74 /* PBXTargetDependency */,
+			);
+			name = EasyPdfUITests;
+			productName = EasyPdfUITests;
+			productReference = 2A3C07522E619690000AFA74 /* EasyPdfUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2A3C072F2E61968D000AFA74 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					2A3C07362E61968D000AFA74 = {
+						CreatedOnToolsVersion = 15.0.1;
+					};
+					2A3C07472E619690000AFA74 = {
+						CreatedOnToolsVersion = 15.0.1;
+						TestTargetID = 2A3C07362E61968D000AFA74;
+					};
+					2A3C07512E619690000AFA74 = {
+						CreatedOnToolsVersion = 15.0.1;
+						TestTargetID = 2A3C07362E61968D000AFA74;
+					};
+				};
+			};
+			buildConfigurationList = 2A3C07322E61968D000AFA74 /* Build configuration list for PBXProject "EasyPdf" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2A3C072E2E61968D000AFA74;
+			productRefGroup = 2A3C07382E61968D000AFA74 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2A3C07362E61968D000AFA74 /* EasyPdf */,
+				2A3C07472E619690000AFA74 /* EasyPdfTests */,
+				2A3C07512E619690000AFA74 /* EasyPdfUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2A3C07352E61968D000AFA74 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A3C07422E619690000AFA74 /* Preview Assets.xcassets in Resources */,
+				2A3C073F2E619690000AFA74 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A3C07462E619690000AFA74 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A3C07502E619690000AFA74 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2A3C07332E61968D000AFA74 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A3C073D2E61968D000AFA74 /* ContentView.swift in Sources */,
+				2A3C073B2E61968D000AFA74 /* EasyPdfApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A3C07442E619690000AFA74 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A3C074D2E619690000AFA74 /* EasyPdfTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A3C074E2E619690000AFA74 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A3C07572E619690000AFA74 /* EasyPdfUITests.swift in Sources */,
+				2A3C07592E619690000AFA74 /* EasyPdfUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2A3C074A2E619690000AFA74 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2A3C07362E61968D000AFA74 /* EasyPdf */;
+			targetProxy = 2A3C07492E619690000AFA74 /* PBXContainerItemProxy */;
+		};
+		2A3C07542E619690000AFA74 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2A3C07362E61968D000AFA74 /* EasyPdf */;
+			targetProxy = 2A3C07532E619690000AFA74 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2A3C075A2E619690000AFA74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.7;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		2A3C075B2E619690000AFA74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.7;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		2A3C075D2E619690000AFA74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = EasyPdf/EasyPdf.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"EasyPdf/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = EasyPdf.EasyPdf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		2A3C075E2E619690000AFA74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = EasyPdf/EasyPdf.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"EasyPdf/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = EasyPdf.EasyPdf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		2A3C07602E619690000AFA74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = EasyPdf.EasyPdfTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EasyPdf.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EasyPdf";
+			};
+			name = Debug;
+		};
+		2A3C07612E619690000AFA74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = EasyPdf.EasyPdfTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EasyPdf.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EasyPdf";
+			};
+			name = Release;
+		};
+		2A3C07632E619690000AFA74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = EasyPdf.EasyPdfUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = EasyPdf;
+			};
+			name = Debug;
+		};
+		2A3C07642E619690000AFA74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = EasyPdf.EasyPdfUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = EasyPdf;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2A3C07322E61968D000AFA74 /* Build configuration list for PBXProject "EasyPdf" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A3C075A2E619690000AFA74 /* Debug */,
+				2A3C075B2E619690000AFA74 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2A3C075C2E619690000AFA74 /* Build configuration list for PBXNativeTarget "EasyPdf" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A3C075D2E619690000AFA74 /* Debug */,
+				2A3C075E2E619690000AFA74 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2A3C075F2E619690000AFA74 /* Build configuration list for PBXNativeTarget "EasyPdfTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A3C07602E619690000AFA74 /* Debug */,
+				2A3C07612E619690000AFA74 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2A3C07622E619690000AFA74 /* Build configuration list for PBXNativeTarget "EasyPdfUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A3C07632E619690000AFA74 /* Debug */,
+				2A3C07642E619690000AFA74 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2A3C072F2E61968D000AFA74 /* Project object */;
+}
