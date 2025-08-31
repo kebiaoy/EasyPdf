@@ -166,6 +166,12 @@ class DataManager: ObservableObject {
     
     // 获取文件的安全书签URL
     func getSecurityScopedURL(for fileURL: URL) -> URL? {
+        // 验证输入参数
+        guard fileURL.isFileURL else {
+            print("无效的文件URL: \(fileURL)")
+            return nil
+        }
+        
         let bookmarkKey = "file_bookmark_\(fileURL.lastPathComponent)"
         
         if let bookmarkData = UserDefaults.standard.data(forKey: bookmarkKey) {
@@ -179,9 +185,22 @@ class DataManager: ObservableObject {
                     return nil
                 }
                 
+                // 验证解析出的URL是否有效
+                guard securityScopedURL.isFileURL else {
+                    print("解析出的URL无效: \(securityScopedURL)")
+                    UserDefaults.standard.removeObject(forKey: bookmarkKey)
+                    return nil
+                }
+                
                 return securityScopedURL
             } catch {
                 print("无法解析文件书签: \(error)")
+                if let nsError = error as NSError? {
+                    print("错误域: \(nsError.domain), 错误代码: \(nsError.code)")
+                    if nsError.domain == "NSOSStatusErrorDomain" && nsError.code == -50 {
+                        print("书签数据可能已损坏，删除并重新创建")
+                    }
+                }
                 UserDefaults.standard.removeObject(forKey: bookmarkKey)
                 return nil
             }

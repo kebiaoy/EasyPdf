@@ -45,6 +45,13 @@ class TabManager: ObservableObject {
     }
     
     func addPDFTab(fileURL: URL) {
+        // 检查是否已经有相同文件的标签页
+        if let existingTab = tabs.first(where: { $0.pdfFileURL?.path == fileURL.path }) {
+            selectedTab = existingTab
+            print("切换到已存在的PDF标签页: \(existingTab.title)")
+            return
+        }
+        
         let fileName = fileURL.deletingPathExtension().lastPathComponent
         let newTab = TabItem(title: fileName, isHomePage: false, pdfFileURL: fileURL)
         tabs.append(newTab)
@@ -52,13 +59,19 @@ class TabManager: ObservableObject {
         
         // 添加到最近文件
         DataManager.shared.addRecentFile(fileURL.path)
-        print("创建PDF标签页: \(fileName)")
+        print("创建新的PDF标签页: \(fileName)")
     }
     
     func deleteTab(_ tab: TabItem) {
         guard !tab.isHomePage else { return } // 主页不能删除
         
         if let index = tabs.firstIndex(of: tab) {
+            // 如果是PDF标签页，清除其缓存
+            if let pdfFileURL = tab.pdfFileURL {
+                PDFStateManager.shared.clearState(for: pdfFileURL)
+                print("清除PDF缓存: \(tab.title)")
+            }
+            
             tabs.remove(at: index)
             
             // 如果删除的是当前选中的标签，切换到其他标签
@@ -121,8 +134,10 @@ struct TabContentView: View {
     var body: some View {
         if tab.isHomePage {
             HomePageSplitView(tabManager: tabManager)
+                .id("home-\(tab.id)")
         } else if let pdfFileURL = tab.pdfFileURL {
             PDFViewerView(fileURL: pdfFileURL)
+                .id("pdf-\(tab.id)-\(pdfFileURL.path.hashValue)")
         } else {
             VStack {
                 Image(systemName: "doc.text")
@@ -136,6 +151,7 @@ struct TabContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.gray.opacity(0.1))
+            .id("content-\(tab.id)")
         }
     }
 }

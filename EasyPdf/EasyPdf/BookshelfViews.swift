@@ -10,13 +10,71 @@ import Foundation
 import PDFKit
 import QuickLook
 import QuickLookThumbnailing
+import UniformTypeIdentifiers
+
+// MARK: - PDF状态管理
+struct PDFViewState {
+    var document: PDFDocument?
+    var currentPage: PDFPage?
+    var scaleFactor: CGFloat = 1.0
+    var displayMode: PDFDisplayMode = .singlePageContinuous
+    var isLoaded: Bool = false
+    var errorMessage: String?
+}
+
+// MARK: - PDF状态缓存管理器
+class PDFStateManager: ObservableObject {
+    static let shared = PDFStateManager()
+    
+    @Published private var pdfStates: [String: PDFViewState] = [:]
+    @Published var lastUpdatedURL: String = ""
+    
+    private init() {}
+    
+    func getState(for fileURL: URL) -> PDFViewState {
+        let key = fileURL.path
+        let state = pdfStates[key] ?? PDFViewState()
+        print("获取PDF状态: \(fileURL.lastPathComponent) -> 已加载: \(state.isLoaded)")
+        return state
+    }
+    
+    func setState(_ state: PDFViewState, for fileURL: URL) {
+        let key = fileURL.path
+        pdfStates[key] = state
+        lastUpdatedURL = key
+        print("保存PDF状态: \(fileURL.lastPathComponent) -> 已加载: \(state.isLoaded)")
+    }
+    
+    func clearState(for fileURL: URL) {
+        let key = fileURL.path
+        pdfStates.removeValue(forKey: key)
+        print("清除PDF状态: \(fileURL.lastPathComponent)")
+    }
+    
+    func clearAllStates() {
+        pdfStates.removeAll()
+        print("清除所有PDF状态")
+    }
+    
+    func hasState(for fileURL: URL) -> Bool {
+        let key = fileURL.path
+        return pdfStates[key]?.isLoaded ?? false
+    }
+}
 
 // MARK: - PDF查看器
 struct PDFViewerView: View {
     let fileURL: URL
-    @State private var pdfDocument: PDFDocument?
-    @State private var isLoading = true
-    @State private var errorMessage: String?
+    @StateObject private var stateManager = PDFStateManager.shared
+    @State private var viewState: PDFViewState
+    @State private var isLoading: Bool
+    
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+        let initialState = PDFStateManager.shared.getState(for: fileURL)
+        self._viewState = State(initialValue: initialState)
+        self._isLoading = State(initialValue: !initialState.isLoaded)
+    }
     
     var body: some View {
         VStack {
@@ -29,7 +87,7 @@ struct PDFViewerView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let errorMessage = errorMessage {
+            } else if let errorMessage = viewState.errorMessage {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 60))
@@ -46,13 +104,17 @@ struct PDFViewerView: View {
                         .padding(.horizontal)
                     
                     Button("重新加载") {
-                        loadPDF()
+                        reloadPDF()
                     }
                     .buttonStyle(.bordered)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let pdfDocument = pdfDocument {
-                PDFKitView(document: pdfDocument)
+            } else if let pdfDocument = viewState.document {
+                CachedPDFKitView(
+                    fileURL: fileURL,
+                    document: pdfDocument,
+                    viewState: $viewState
+                )
             } else {
                 VStack(spacing: 16) {
                     Image(systemName: "doc.text")
@@ -67,24 +129,90 @@ struct PDFViewerView: View {
             }
         }
         .onAppear {
+            print("PDF查看器出现: \(fileURL.lastPathComponent)")
+            syncStateAndLoad()
+        }
+        .onDisappear {
+            print("PDF查看器消失: \(fileURL.lastPathComponent)")
+            // 保存当前状态
+            stateManager.setState(viewState, for: fileURL)
+        }
+        .onChange(of: fileURL) { newURL in
+            print("PDF文件URL变化: \(newURL.lastPathComponent)")
+            syncStateAndLoad()
+        }
+    }
+    
+    private func syncStateAndLoad() {
+        // 从状态管理器获取最新状态
+        let latestState = stateManager.getState(for: fileURL)
+        
+        // 如果状态已加载，直接同步
+        if latestState.isLoaded {
+            print("PDF已缓存，同步状态: \(fileURL.lastPathComponent)")
+            viewState = latestState
+            isLoading = false
+        } else {
+            print("PDF未缓存，开始加载: \(fileURL.lastPathComponent)")
             loadPDF()
         }
     }
     
+    private func loadPDFIfNeeded() {
+        // 如果已经加载过，直接返回
+        if viewState.isLoaded {
+            print("PDF已缓存，无需重新加载: \(fileURL.lastPathComponent)")
+            return
+        }
+        
+        loadPDF()
+    }
+    
+    private func reloadPDF() {
+        // 清除缓存状态，强制重新加载
+        stateManager.clearState(for: fileURL)
+        viewState = PDFViewState()
+        loadPDF()
+    }
+    
     private func loadPDF() {
         isLoading = true
-        errorMessage = nil
-        pdfDocument = nil
+        viewState.errorMessage = nil
+        viewState.document = nil
+        
+        print("开始加载PDF: \(fileURL.lastPathComponent)")
         
         DispatchQueue.global(qos: .userInitiated).async {
+            // 验证文件URL
+            guard self.fileURL.isFileURL else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.viewState.errorMessage = "无效的文件URL。"
+                }
+                return
+            }
+            
+            // 验证文件存在
+            guard FileManager.default.fileExists(atPath: self.fileURL.path) else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.viewState.errorMessage = "PDF文件不存在或已被移动。路径：\(self.fileURL.path)"
+                }
+                return
+            }
+            
             // 尝试使用安全书签访问文件
-            var targetURL = fileURL
+            var targetURL = self.fileURL
             var hasSecurityAccess = false
             
-            if let securityScopedURL = DataManager.shared.getSecurityScopedURL(for: fileURL) {
+            if let securityScopedURL = DataManager.shared.getSecurityScopedURL(for: self.fileURL) {
                 targetURL = securityScopedURL
                 hasSecurityAccess = targetURL.startAccessingSecurityScopedResource()
                 print("PDF查看器使用安全书签URL访问文件: \(hasSecurityAccess)")
+            } else {
+                // 尝试直接访问
+                hasSecurityAccess = self.fileURL.startAccessingSecurityScopedResource()
+                print("PDF查看器直接访问文件: \(hasSecurityAccess)")
             }
             
             defer {
@@ -93,11 +221,20 @@ struct PDFViewerView: View {
                 }
             }
             
+            // 检查是否有访问权限
+            guard hasSecurityAccess else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.viewState.errorMessage = "无法访问PDF文件，可能需要重新选择工作空间文件夹以获取权限。"
+                }
+                return
+            }
+            
             // 加载PDF文档
             guard let document = PDFDocument(url: targetURL) else {
                 DispatchQueue.main.async {
                     self.isLoading = false
-                    self.errorMessage = "无法读取PDF文件，文件可能已损坏或格式不正确。"
+                    self.viewState.errorMessage = "无法读取PDF文件，文件可能已损坏或格式不正确。"
                 }
                 return
             }
@@ -106,21 +243,158 @@ struct PDFViewerView: View {
             guard document.pageCount > 0 else {
                 DispatchQueue.main.async {
                     self.isLoading = false
-                    self.errorMessage = "PDF文档没有任何页面。"
+                    self.viewState.errorMessage = "PDF文档没有任何页面。"
                 }
                 return
             }
             
             DispatchQueue.main.async {
-                self.pdfDocument = document
+                self.viewState.document = document
+                self.viewState.isLoaded = true
                 self.isLoading = false
                 print("PDF文档加载成功，页面数: \(document.pageCount)")
+                
+                // 立即保存到缓存
+                self.stateManager.setState(self.viewState, for: self.fileURL)
             }
         }
     }
 }
 
-// MARK: - PDFKit包装器
+// MARK: - 缓存版PDFKit包装器
+struct CachedPDFKitView: NSViewRepresentable {
+    let fileURL: URL
+    let document: PDFDocument
+    @Binding var viewState: PDFViewState
+    @StateObject private var stateManager = PDFStateManager.shared
+    
+    func makeNSView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.document = document
+        pdfView.autoScales = true
+        pdfView.displayDirection = .vertical
+        pdfView.displayMode = viewState.displayMode
+        pdfView.displaysPageBreaks = true
+        
+        // 恢复之前的页面和缩放状态
+        if let currentPage = viewState.currentPage {
+            pdfView.go(to: currentPage)
+        }
+        
+        if viewState.scaleFactor != 1.0 {
+            pdfView.scaleFactor = viewState.scaleFactor
+        }
+        
+        // 设置代理来监听状态变化
+        let coordinator = context.coordinator
+        coordinator.pdfView = pdfView
+        coordinator.setup()
+        
+        print("恢复PDF状态 - 页面: \(viewState.currentPage?.label ?? "首页"), 缩放: \(viewState.scaleFactor)")
+        
+        return pdfView
+    }
+    
+    func updateNSView(_ nsView: PDFView, context: Context) {
+        if nsView.document != document {
+            nsView.document = document
+        }
+        
+        // 更新显示模式
+        if nsView.displayMode != viewState.displayMode {
+            nsView.displayMode = viewState.displayMode
+        }
+    }
+    
+    func makeCoordinator() -> PDFCoordinator {
+        PDFCoordinator(fileURL: fileURL, viewState: $viewState, stateManager: stateManager)
+    }
+}
+
+// MARK: - PDF状态协调器
+class PDFCoordinator: NSObject {
+    let fileURL: URL
+    @Binding var viewState: PDFViewState
+    let stateManager: PDFStateManager
+    weak var pdfView: PDFView?
+    
+    init(fileURL: URL, viewState: Binding<PDFViewState>, stateManager: PDFStateManager) {
+        self.fileURL = fileURL
+        self._viewState = viewState
+        self.stateManager = stateManager
+        super.init()
+    }
+    
+    func setup() {
+        guard let pdfView = pdfView else { return }
+        
+        // 监听页面变化
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(pageChanged),
+            name: .PDFViewPageChanged,
+            object: pdfView
+        )
+        
+        // 监听缩放变化
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(scaleChanged),
+            name: .PDFViewScaleChanged,
+            object: pdfView
+        )
+        
+        // 监听显示模式变化
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(displayModeChanged),
+            name: .PDFViewDisplayModeChanged,
+            object: pdfView
+        )
+    }
+    
+    @objc private func pageChanged() {
+        guard let pdfView = pdfView else { return }
+        
+        viewState.currentPage = pdfView.currentPage
+        saveState()
+        
+        if let pageLabel = pdfView.currentPage?.label {
+            print("页面已切换到: \(pageLabel)")
+        }
+    }
+    
+    @objc private func scaleChanged() {
+        guard let pdfView = pdfView else { return }
+        
+        viewState.scaleFactor = pdfView.scaleFactor
+        saveState()
+        
+        print("缩放已更改为: \(pdfView.scaleFactor)")
+    }
+    
+    @objc private func displayModeChanged() {
+        guard let pdfView = pdfView else { return }
+        
+        viewState.displayMode = pdfView.displayMode
+        saveState()
+        
+        print("显示模式已更改为: \(pdfView.displayMode.rawValue)")
+    }
+    
+    private func saveState() {
+        // 延迟保存以避免频繁写入
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.stateManager.setState(self.viewState, for: self.fileURL)
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+}
+
+// MARK: - 原版PDFKit包装器（保持兼容性）
 struct PDFKitView: NSViewRepresentable {
     let document: PDFDocument
     
@@ -158,13 +432,19 @@ class PDFThumbnailGenerator: ObservableObject {
             return cachedImage
         }
         
-        var thumbnail: NSImage?
-        
-        // 确保我们能访问文件
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            print("文件不存在: \(url.path)")
-            return generateFallbackIcon(size: size)
+        // 验证输入参数
+        guard url.isFileURL,
+              size.width > 0 && size.height > 0,
+              FileManager.default.fileExists(atPath: url.path) else {
+            print("输入参数无效或文件不存在: \(url.path)")
+            let fallback = generateFallbackIcon(size: size)
+            if let fallback = fallback {
+                cache.setObject(fallback, forKey: cacheKey)
+            }
+            return fallback
         }
+        
+        var thumbnail: NSImage?
         
         // 方法1: 优先使用PDFKit直接渲染PDF第一页内容
         print("尝试使用PDFKit生成缩略图: \(url.lastPathComponent)")
@@ -175,7 +455,10 @@ class PDFThumbnailGenerator: ObservableObject {
         } else {
             print("PDFKit生成失败，尝试QuickLook")
             // 方法2: 使用QuickLook生成真实PDF预览
-            thumbnail = generateQuickLookThumbnail(for: url, size: size)
+            // 添加条件检查，避免在已知会失败的情况下调用QuickLook
+            if url.pathExtension.lowercased() == "pdf" {
+                thumbnail = generateQuickLookThumbnail(for: url, size: size)
+            }
         }
         
         if thumbnail != nil {
@@ -186,7 +469,7 @@ class PDFThumbnailGenerator: ObservableObject {
             thumbnail = generateFallbackIcon(size: size)
         }
         
-        // 缓存结果
+        // 缓存结果（即使是备用图标也要缓存）
         if let thumbnail = thumbnail {
             cache.setObject(thumbnail, forKey: cacheKey)
         }
@@ -195,6 +478,23 @@ class PDFThumbnailGenerator: ObservableObject {
     }
     
     private func generatePDFKitThumbnail(for url: URL, size: CGSize) -> NSImage? {
+        // 验证输入参数
+        guard url.isFileURL else {
+            print("PDFKit: 无效的文件URL")
+            return nil
+        }
+        
+        guard size.width > 0 && size.height > 0 else {
+            print("PDFKit: 无效的尺寸参数")
+            return nil
+        }
+        
+        // 验证文件存在
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            print("PDFKit: 文件不存在 - \(url.path)")
+            return nil
+        }
+        
         // 尝试使用安全书签URL
         var targetURL = url
         var hasSecurityAccess = false
@@ -203,12 +503,22 @@ class PDFThumbnailGenerator: ObservableObject {
             targetURL = securityScopedURL
             hasSecurityAccess = targetURL.startAccessingSecurityScopedResource()
             print("使用安全书签URL访问文件: \(hasSecurityAccess)")
+        } else {
+            // 尝试直接访问
+            hasSecurityAccess = url.startAccessingSecurityScopedResource()
+            print("PDFKit直接访问文件: \(hasSecurityAccess)")
         }
         
         defer {
             if hasSecurityAccess {
                 targetURL.stopAccessingSecurityScopedResource()
             }
+        }
+        
+        // 如果没有访问权限，返回nil
+        guard hasSecurityAccess else {
+            print("PDFKit: 无法获取文件访问权限")
+            return nil
         }
         
         // 尝试创建PDFDocument
@@ -296,8 +606,23 @@ class PDFThumbnailGenerator: ObservableObject {
         
         // 尝试使用文件类型图标
         let fileType = url.pathExtension
-        let typeIcon = workspace.icon(forFileType: fileType)
-        return resizeImage(typeIcon, to: size)
+        if #available(macOS 12.0, *) {
+            if let contentType = UTType(filenameExtension: fileType) {
+                let typeIcon = workspace.icon(for: contentType)
+                return resizeImage(typeIcon, to: size)
+            }
+        } else {
+            let typeIcon = workspace.icon(forFileType: fileType)
+            return resizeImage(typeIcon, to: size)
+        }
+        
+        // 备用方案：返回通用文档图标
+        if #available(macOS 12.0, *) {
+            let typeIcon = workspace.icon(for: .data)
+            return resizeImage(typeIcon, to: size)
+        } else {
+            return resizeImage(workspace.icon(forFileType: ""), to: size)
+        }
     }
     
     private func resizeImage(_ image: NSImage, to size: CGSize) -> NSImage {
@@ -390,6 +715,24 @@ class PDFThumbnailGenerator: ObservableObject {
     
     private func generateQuickLookThumbnail(for url: URL, size: CGSize) -> NSImage? {
         if #available(macOS 10.15, *) {
+            // 验证URL有效性
+            guard url.isFileURL else {
+                print("QuickLook: 无效的文件URL")
+                return nil
+            }
+            
+            // 验证文件存在
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                print("QuickLook: 文件不存在 - \(url.path)")
+                return nil
+            }
+            
+            // 验证尺寸参数
+            guard size.width > 0 && size.height > 0 && size.width <= 1024 && size.height <= 1024 else {
+                print("QuickLook: 无效的尺寸参数 - \(size)")
+                return nil
+            }
+            
             // 尝试使用安全书签URL
             var targetURL = url
             var hasSecurityAccess = false
@@ -399,9 +742,15 @@ class PDFThumbnailGenerator: ObservableObject {
                 hasSecurityAccess = targetURL.startAccessingSecurityScopedResource()
                 print("QuickLook使用安全书签URL访问文件: \(hasSecurityAccess)")
             } else {
-                // 尝试直接访问
-                hasSecurityAccess = url.startAccessingSecurityScopedResource()
-                print("QuickLook直接访问文件: \(hasSecurityAccess)")
+                // 尝试直接访问（确保URL是安全的）
+                if url.startAccessingSecurityScopedResource() {
+                    hasSecurityAccess = true
+                    targetURL = url
+                    print("QuickLook直接访问文件: \(hasSecurityAccess)")
+                } else {
+                    print("QuickLook: 无法获取文件访问权限")
+                    return nil
+                }
             }
             
             defer {
@@ -410,38 +759,55 @@ class PDFThumbnailGenerator: ObservableObject {
                 }
             }
             
-            // 使用更高的scale以获得更清晰的图像
-            let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+            // 使用适当的scale值
+            let scale = min(NSScreen.main?.backingScaleFactor ?? 1.0, 3.0) // 限制最大scale为3.0
+            
+            // 创建QLThumbnailGenerator请求
             let request = QLThumbnailGenerator.Request(
                 fileAt: targetURL,
                 size: size,
                 scale: scale,
-                representationTypes: .thumbnail // 明确请求缩略图类型
+                representationTypes: .thumbnail
             )
             
             let semaphore = DispatchSemaphore(value: 0)
             var resultImage: NSImage?
-            var error: Error?
+            var generationError: Error?
             
-            print("开始QuickLook缩略图生成: \(url.lastPathComponent)")
+            print("开始QuickLook缩略图生成: \(url.lastPathComponent), 尺寸: \(size), scale: \(scale)")
             
             QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, genError in
                 if let thumbnail = thumbnail {
                     resultImage = thumbnail.nsImage
                     print("QuickLook生成成功，图像尺寸: \(thumbnail.nsImage.size)")
                 } else if let genError = genError {
-                    error = genError
+                    generationError = genError
                     print("QuickLook缩略图生成失败: \(genError.localizedDescription)")
+                    
+                    // 详细错误信息
+                    if let nsError = genError as NSError? {
+                        print("错误域: \(nsError.domain), 错误代码: \(nsError.code)")
+                        if nsError.domain == "NSOSStatusErrorDomain" && nsError.code == -50 {
+                            print("参数错误：可能是传入了无效的文件URL或参数")
+                        }
+                    }
+                } else {
+                    print("QuickLook: 未知错误，没有返回缩略图或错误信息")
                 }
                 semaphore.signal()
             }
             
-            // 设置超时时间，避免无限等待
-            let timeout = DispatchTime.now() + .seconds(5)
+            // 设置更短的超时时间，避免阻塞
+            let timeout = DispatchTime.now() + .seconds(3)
             let result = semaphore.wait(timeout: timeout)
             
             if result == .timedOut {
                 print("QuickLook缩略图生成超时")
+                return nil
+            }
+            
+            if let error = generationError {
+                print("最终错误: \(error)")
                 return nil
             }
             
