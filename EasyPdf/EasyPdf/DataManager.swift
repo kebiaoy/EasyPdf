@@ -122,9 +122,23 @@ class DataManager: ObservableObject {
                     options: .skipsHiddenFiles
                 )
                 
-                return contents.filter { url in
+                // 为每个PDF文件创建带有安全书签的URL
+                let pdfFiles = contents.filter { url in
                     url.pathExtension.lowercased() == "pdf"
                 }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+                
+                return pdfFiles.compactMap { fileURL in
+                    // 为每个文件创建安全书签
+                    do {
+                        let fileBookmarkData = try fileURL.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+                        // 保存文件书签供后续使用
+                        UserDefaults.standard.set(fileBookmarkData, forKey: "file_bookmark_\(fileURL.lastPathComponent)")
+                        return fileURL
+                    } catch {
+                        print("无法为文件创建书签: \(fileURL.lastPathComponent), 错误: \(error)")
+                        return fileURL // 即使无法创建书签也返回URL
+                    }
+                }
                 
             } catch {
                 print("无法解析书签或访问文件夹: \(error)")
@@ -148,6 +162,32 @@ class DataManager: ObservableObject {
                 return []
             }
         }
+    }
+    
+    // 获取文件的安全书签URL
+    func getSecurityScopedURL(for fileURL: URL) -> URL? {
+        let bookmarkKey = "file_bookmark_\(fileURL.lastPathComponent)"
+        
+        if let bookmarkData = UserDefaults.standard.data(forKey: bookmarkKey) {
+            do {
+                var stale = false
+                let securityScopedURL = try URL(resolvingBookmarkData: bookmarkData, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &stale)
+                
+                if stale {
+                    print("文件书签已过期: \(fileURL.lastPathComponent)")
+                    UserDefaults.standard.removeObject(forKey: bookmarkKey)
+                    return nil
+                }
+                
+                return securityScopedURL
+            } catch {
+                print("无法解析文件书签: \(error)")
+                UserDefaults.standard.removeObject(forKey: bookmarkKey)
+                return nil
+            }
+        }
+        
+        return nil
     }
 }
 
