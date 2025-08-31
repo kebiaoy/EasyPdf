@@ -11,6 +11,136 @@ import PDFKit
 import QuickLook
 import QuickLookThumbnailing
 
+// MARK: - PDF查看器
+struct PDFViewerView: View {
+    let fileURL: URL
+    @State private var pdfDocument: PDFDocument?
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        VStack {
+            if isLoading {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("加载PDF文档中...")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let errorMessage = errorMessage {
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.orange)
+                    
+                    Text("无法加载PDF文档")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text(errorMessage)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    
+                    Button("重新加载") {
+                        loadPDF()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let pdfDocument = pdfDocument {
+                PDFKitView(document: pdfDocument)
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray)
+                    
+                    Text("PDF文档为空")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .onAppear {
+            loadPDF()
+        }
+    }
+    
+    private func loadPDF() {
+        isLoading = true
+        errorMessage = nil
+        pdfDocument = nil
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            // 尝试使用安全书签访问文件
+            var targetURL = fileURL
+            var hasSecurityAccess = false
+            
+            if let securityScopedURL = DataManager.shared.getSecurityScopedURL(for: fileURL) {
+                targetURL = securityScopedURL
+                hasSecurityAccess = targetURL.startAccessingSecurityScopedResource()
+                print("PDF查看器使用安全书签URL访问文件: \(hasSecurityAccess)")
+            }
+            
+            defer {
+                if hasSecurityAccess {
+                    targetURL.stopAccessingSecurityScopedResource()
+                }
+            }
+            
+            // 加载PDF文档
+            guard let document = PDFDocument(url: targetURL) else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.errorMessage = "无法读取PDF文件，文件可能已损坏或格式不正确。"
+                }
+                return
+            }
+            
+            // 检查PDF是否有页面
+            guard document.pageCount > 0 else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.errorMessage = "PDF文档没有任何页面。"
+                }
+                return
+            }
+            
+            DispatchQueue.main.async {
+                self.pdfDocument = document
+                self.isLoading = false
+                print("PDF文档加载成功，页面数: \(document.pageCount)")
+            }
+        }
+    }
+}
+
+// MARK: - PDFKit包装器
+struct PDFKitView: NSViewRepresentable {
+    let document: PDFDocument
+    
+    func makeNSView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.document = document
+        pdfView.autoScales = true
+        pdfView.displayDirection = .vertical
+        pdfView.displayMode = .singlePageContinuous
+        pdfView.displaysPageBreaks = true
+        return pdfView
+    }
+    
+    func updateNSView(_ nsView: PDFView, context: Context) {
+        if nsView.document != document {
+            nsView.document = document
+        }
+    }
+}
+
 // MARK: - PDF缩略图生成器
 class PDFThumbnailGenerator: ObservableObject {
     static let shared = PDFThumbnailGenerator()
@@ -408,7 +538,7 @@ struct PDFThumbnailView: View {
 struct BookshelfView: View {
     @StateObject private var dataManager = DataManager.shared
     @State private var pdfFiles: [URL] = []
-    @State private var selectedFile: URL?
+    let tabManager: TabManager
     
     let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 4)
     
@@ -485,10 +615,8 @@ struct BookshelfView: View {
                         ForEach(pdfFiles, id: \.self) { fileURL in
                             BookItemView(
                                 fileURL: fileURL,
-                                isSelected: selectedFile == fileURL,
                                 onTap: {
-                                    selectedFile = fileURL
-                                    dataManager.addRecentFile(fileURL.path)
+                                    tabManager.addPDFTab(fileURL: fileURL)
                                 }
                             )
                         }
@@ -505,7 +633,6 @@ struct BookshelfView: View {
         }
         .onChange(of: dataManager.workspacePath) { _ in
             refreshFileList()
-            selectedFile = nil
         }
     }
     
@@ -517,7 +644,6 @@ struct BookshelfView: View {
 // MARK: - 书本项目视图
 struct BookItemView: View {
     let fileURL: URL
-    let isSelected: Bool
     let onTap: () -> Void
     
     @State private var isHovered = false
@@ -534,25 +660,31 @@ struct BookItemView: View {
                     )
                     .frame(height: 180)
                     
-                    // 选中状态指示器
-                    if isSelected {
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.title3)
-                                    .foregroundColor(.green)
-                                    .background(Color.white.clipShape(Circle()))
-                                    .padding(8)
-                            }
-                            Spacer()
-                        }
-                    }
-                    
                     // 悬停效果覆盖层
                     if isHovered {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.black.opacity(0.1))
+                    }
+                    
+                    // 悬停时显示打开提示
+                    if isHovered {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Image(systemName: "arrow.up.right.square.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                Text("打开")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue.opacity(0.8))
+                            .cornerRadius(8)
+                            .padding(.bottom, 8)
+                        }
                     }
                     
                     // 阴影和边框效果
@@ -566,15 +698,15 @@ struct BookItemView: View {
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: isSelected ? 2 : 1
+                            lineWidth: 1
                         )
                 }
-                .scaleEffect(isSelected ? 1.05 : (isHovered ? 1.02 : 1.0))
+                .scaleEffect(isHovered ? 1.02 : 1.0)
                 .shadow(
-                    color: isSelected ? .blue.opacity(0.3) : .black.opacity(0.15),
-                    radius: isSelected ? 10 : 6,
+                    color: .black.opacity(0.15),
+                    radius: isHovered ? 8 : 4,
                     x: 0,
-                    y: isSelected ? 6 : 3
+                    y: isHovered ? 4 : 2
                 )
                 
                 // 文件名
@@ -601,7 +733,7 @@ struct BookItemView: View {
                 isHovered = hovering
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
+        .animation(.easeInOut(duration: 0.2), value: isHovered)
     }
     
     private func getFileSize(url: URL) -> String? {

@@ -52,6 +52,7 @@ struct SplitterView: View {
 struct HomePageSplitView: View {
     @State private var leftPanelWidth: CGFloat = 320
     @State private var containerWidth: CGFloat = 800
+    let tabManager: TabManager
     
     var body: some View {
         GeometryReader { geometry in
@@ -70,7 +71,7 @@ struct HomePageSplitView: View {
                 )
                 
                 // 右侧书架
-                BookshelfView()
+                BookshelfView(tabManager: tabManager)
                     .frame(maxWidth: .infinity)
             }
             .onAppear {

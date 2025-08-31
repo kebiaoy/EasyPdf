@@ -53,7 +53,7 @@ struct ContentView: View {
             
             // 标签页内容区域
             if let selectedTab = tabManager.selectedTab {
-                TabContentView(tab: selectedTab)
+                TabContentView(tab: selectedTab, tabManager: tabManager)
             } else {
                 Text("没有选中的标签页")
                     .foregroundColor(.secondary)

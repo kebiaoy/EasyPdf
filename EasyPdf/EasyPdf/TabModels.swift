@@ -13,10 +13,12 @@ struct TabItem: Identifiable, Equatable {
     let id = UUID()
     let title: String
     let isHomePage: Bool
+    let pdfFileURL: URL?
     
-    init(title: String, isHomePage: Bool) {
+    init(title: String, isHomePage: Bool, pdfFileURL: URL? = nil) {
         self.title = title
         self.isHomePage = isHomePage
+        self.pdfFileURL = pdfFileURL
     }
     
     static func == (lhs: TabItem, rhs: TabItem) -> Bool {
@@ -40,6 +42,17 @@ class TabManager: ObservableObject {
         let newTab = TabItem(title: "新标签页 \(tabs.count)", isHomePage: false)
         tabs.append(newTab)
         selectedTab = newTab
+    }
+    
+    func addPDFTab(fileURL: URL) {
+        let fileName = fileURL.deletingPathExtension().lastPathComponent
+        let newTab = TabItem(title: fileName, isHomePage: false, pdfFileURL: fileURL)
+        tabs.append(newTab)
+        selectedTab = newTab
+        
+        // 添加到最近文件
+        DataManager.shared.addRecentFile(fileURL.path)
+        print("创建PDF标签页: \(fileName)")
     }
     
     func deleteTab(_ tab: TabItem) {
@@ -103,10 +116,13 @@ struct TabLabelView: View {
 // MARK: - 标签页内容视图
 struct TabContentView: View {
     let tab: TabItem
+    let tabManager: TabManager
     
     var body: some View {
         if tab.isHomePage {
-            HomePageSplitView()
+            HomePageSplitView(tabManager: tabManager)
+        } else if let pdfFileURL = tab.pdfFileURL {
+            PDFViewerView(fileURL: pdfFileURL)
         } else {
             VStack {
                 Image(systemName: "doc.text")
