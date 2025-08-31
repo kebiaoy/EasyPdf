@@ -12,6 +12,146 @@ import QuickLook
 import QuickLookThumbnailing
 import UniformTypeIdentifiers
 
+// MARK: - 可编辑的PDF目录项
+class EditablePDFOutline: ObservableObject, Identifiable, Codable {
+    let id = UUID()
+    @Published var label: String
+    @Published var children: [EditablePDFOutline] = []
+    @Published var isExpanded: Bool = true
+    @Published var isEditing: Bool = false
+    
+    var page: PDFPage?
+    var destination: PDFDestination?
+    var originalOutline: PDFOutline?
+    
+    init(label: String, page: PDFPage? = nil, destination: PDFDestination? = nil, originalOutline: PDFOutline? = nil) {
+        self.label = label
+        self.page = page
+        self.destination = destination
+        self.originalOutline = originalOutline
+    }
+    
+    convenience init(from pdfOutline: PDFOutline) {
+        self.init(
+            label: pdfOutline.label ?? "未命名",
+            page: pdfOutline.destination?.page,
+            destination: pdfOutline.destination,
+            originalOutline: pdfOutline
+        )
+        
+        // 递归转换子项
+        for i in 0..<pdfOutline.numberOfChildren {
+            if let child = pdfOutline.child(at: i) {
+                children.append(EditablePDFOutline(from: child))
+            }
+        }
+    }
+    
+    func addChild(_ child: EditablePDFOutline) {
+        children.append(child)
+    }
+    
+    func removeChild(_ child: EditablePDFOutline) {
+        children.removeAll { $0.id == child.id }
+    }
+    
+    func moveChild(from sourceIndex: Int, to destinationIndex: Int) {
+        guard sourceIndex != destinationIndex && 
+              sourceIndex < children.count && 
+              destinationIndex <= children.count else { return }
+        
+        let movedItem = children.remove(at: sourceIndex)
+        let newIndex = sourceIndex < destinationIndex ? destinationIndex - 1 : destinationIndex
+        children.insert(movedItem, at: newIndex)
+    }
+    
+    // MARK: - Codable支持
+    private enum CodingKeys: String, CodingKey {
+        case id, label, children, isExpanded, isEditing
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        label = try container.decode(String.self, forKey: .label)
+        children = try container.decode([EditablePDFOutline].self, forKey: .children)
+        isExpanded = try container.decode(Bool.self, forKey: .isExpanded)
+        isEditing = try container.decode(Bool.self, forKey: .isEditing)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(label, forKey: .label)
+        try container.encode(children, forKey: .children)
+        try container.encode(isExpanded, forKey: .isExpanded)
+        try container.encode(isEditing, forKey: .isEditing)
+    }
+}
+
+// MARK: - 目录管理器
+class EditableOutlineManager: ObservableObject {
+    @Published var outlineItems: [EditablePDFOutline] = []
+    private var document: PDFDocument?
+    
+    func loadFromDocument(_ document: PDFDocument) {
+        self.document = document
+        
+        guard let outline = document.outlineRoot else {
+            outlineItems = []
+            return
+        }
+        
+        var items: [EditablePDFOutline] = []
+        for i in 0..<outline.numberOfChildren {
+            if let child = outline.child(at: i) {
+                items.append(EditablePDFOutline(from: child))
+            }
+        }
+        outlineItems = items
+    }
+    
+    func addRootItem(_ item: EditablePDFOutline) {
+        outlineItems.append(item)
+        saveToDocument()
+    }
+    
+    func addChildItem(_ childItem: EditablePDFOutline, to parentItem: EditablePDFOutline) {
+        parentItem.addChild(childItem)
+        saveToDocument()
+    }
+    
+    func removeItem(_ item: EditablePDFOutline) {
+        // 从根项目中移除
+        outlineItems.removeAll { $0.id == item.id }
+        
+        // 从所有父项中递归移除
+        removeItemRecursively(item, from: outlineItems)
+        saveToDocument()
+    }
+    
+    private func removeItemRecursively(_ itemToRemove: EditablePDFOutline, from items: [EditablePDFOutline]) {
+        for item in items {
+            item.removeChild(itemToRemove)
+            removeItemRecursively(itemToRemove, from: item.children)
+        }
+    }
+    
+    func moveItem(_ item: EditablePDFOutline, to newIndex: Int) {
+        if let currentIndex = outlineItems.firstIndex(where: { $0.id == item.id }) {
+            outlineItems.remove(at: currentIndex)
+            let insertIndex = currentIndex < newIndex ? newIndex - 1 : newIndex
+            outlineItems.insert(item, at: min(insertIndex, outlineItems.count))
+            saveToDocument()
+        }
+    }
+    
+    private func saveToDocument() {
+        // TODO: 实现保存到PDF文档的逻辑
+        // 这需要创建新的PDFOutline对象并重建文档的目录结构
+        print("保存目录到PDF文档 - 目前为演示模式")
+    }
+}
+
 // MARK: - PDF状态管理
 struct PDFViewState {
     var document: PDFDocument?
@@ -562,7 +702,10 @@ struct PDFOutlineView: View {
     let document: PDFDocument
     @Binding var viewState: PDFViewState
     
-    @State private var outlineItems: [PDFOutline] = []
+    @StateObject private var outlineManager = EditableOutlineManager()
+    @State private var showingContextMenu = false
+    @State private var contextMenuLocation: CGPoint = .zero
+    @State private var selectedOutlineItem: EditablePDFOutline?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -572,6 +715,17 @@ struct PDFOutlineView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 Spacer()
+                
+                // 添加根目录按钮
+                Button(action: {
+                    addRootOutlineItem()
+                }) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("添加根目录")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -579,7 +733,7 @@ struct PDFOutlineView: View {
             .border(Color.gray.opacity(0.2), width: 0.5)
             
             // 目录内容
-            if outlineItems.isEmpty {
+            if outlineManager.outlineItems.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "doc.text")
                         .font(.system(size: 32))
@@ -587,16 +741,28 @@ struct PDFOutlineView: View {
                     Text("此PDF没有目录")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    
+                    Button("创建第一个目录") {
+                        addRootOutlineItem()
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.caption)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(Array(outlineItems.enumerated()), id: \.offset) { index, item in
-                            PDFOutlineItemView(
+                        ForEach(outlineManager.outlineItems) { item in
+                            EditablePDFOutlineItemView(
                                 item: item,
                                 level: 0,
-                                viewState: $viewState
+                                viewState: $viewState,
+                                outlineManager: outlineManager,
+                                onContextMenu: { location, outlineItem in
+                                    contextMenuLocation = location
+                                    selectedOutlineItem = outlineItem
+                                    showingContextMenu = true
+                                }
                             )
                         }
                     }
@@ -605,28 +771,319 @@ struct PDFOutlineView: View {
                 }
             }
         }
+        .contextMenu {
+            if selectedOutlineItem == nil {
+                // 空白处右键菜单
+                Button("添加根目录") {
+                    addRootOutlineItem()
+                }
+            }
+        }
+        .popover(isPresented: $showingContextMenu, arrowEdge: .trailing) {
+            if let selectedItem = selectedOutlineItem {
+                OutlineContextMenu(
+                    outlineItem: selectedItem,
+                    outlineManager: outlineManager,
+                    currentPage: viewState.currentPage,
+                    onDismiss: {
+                        showingContextMenu = false
+                        selectedOutlineItem = nil
+                    }
+                )
+            }
+        }
         .onAppear {
             loadOutline()
         }
     }
     
     private func loadOutline() {
-        guard let outline = document.outlineRoot else {
-            outlineItems = []
-            return
+        outlineManager.loadFromDocument(document)
+    }
+    
+    private func addRootOutlineItem() {
+        let currentPageLabel = if let currentPage = viewState.currentPage,
+                                 let document = viewState.document {
+            "第 \(document.index(for: currentPage) + 1) 页"
+        } else {
+            "新目录"
         }
         
-        var items: [PDFOutline] = []
-        for i in 0..<outline.numberOfChildren {
-            if let child = outline.child(at: i) {
-                items.append(child)
-            }
-        }
-        outlineItems = items
+        let newItem = EditablePDFOutline(
+            label: currentPageLabel,
+            page: viewState.currentPage
+        )
+        outlineManager.addRootItem(newItem)
     }
 }
 
-// MARK: - PDF目录项视图
+// MARK: - 可编辑的PDF目录项视图
+struct EditablePDFOutlineItemView: View {
+    @ObservedObject var item: EditablePDFOutline
+    let level: Int
+    @Binding var viewState: PDFViewState
+    let outlineManager: EditableOutlineManager
+    let onContextMenu: (CGPoint, EditablePDFOutline) -> Void
+    
+    @State private var dragOffset: CGSize = .zero
+    @State private var editingText: String = ""
+    @FocusState private var isTextFieldFocused: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            // 当前项
+            HStack(spacing: 4) {
+                // 缩进
+                if level > 0 {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: CGFloat(level * 16))
+                }
+                
+                // 展开/折叠按钮
+                if !item.children.isEmpty {
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            item.isExpanded.toggle()
+                        }
+                    }) {
+                        Image(systemName: item.isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 16, height: 16)
+                } else {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: 16, height: 16)
+                }
+                
+                // 标题（可编辑）
+                if item.isEditing {
+                    TextField("目录标题", text: $editingText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                        .focused($isTextFieldFocused)
+                        .onSubmit {
+                            finishEditing()
+                        }
+                        .onAppear {
+                            editingText = item.label
+                            isTextFieldFocused = true
+                        }
+                } else {
+                    Button(action: {
+                        navigateToItem()
+                    }) {
+                        Text(item.label)
+                            .font(.system(size: 12))
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .onTapGesture(count: 2) {
+                        startEditing()
+                    }
+                    .onTapGesture(count: 1) {
+                        navigateToItem()
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+            .padding(.horizontal, 4)
+            .background(
+                Rectangle()
+                    .fill(Color.clear)
+                    .contentShape(Rectangle())
+            )
+            .offset(dragOffset)
+            .contextMenu {
+                OutlineItemContextMenu(
+                    outlineItem: item,
+                    outlineManager: outlineManager,
+                    currentPage: viewState.currentPage
+                )
+            }
+            .draggable(item) {
+                // 拖拽预览
+                Text(item.label)
+                    .padding(4)
+                    .background(Color.gray.opacity(0.3))
+                    .cornerRadius(4)
+            }
+            .dropDestination(for: EditablePDFOutline.self) { droppedItems, location in
+                return handleDrop(droppedItems)
+            }
+            
+            // 子项目
+            if item.isExpanded && !item.children.isEmpty {
+                ForEach(item.children) { child in
+                    EditablePDFOutlineItemView(
+                        item: child,
+                        level: level + 1,
+                        viewState: $viewState,
+                        outlineManager: outlineManager,
+                        onContextMenu: onContextMenu
+                    )
+                }
+            }
+        }
+    }
+    
+    private func startEditing() {
+        item.isEditing = true
+        editingText = item.label
+    }
+    
+    private func finishEditing() {
+        item.label = editingText.isEmpty ? "未命名" : editingText
+        item.isEditing = false
+        isTextFieldFocused = false
+    }
+    
+    private func navigateToItem() {
+        guard let page = item.page ?? item.destination?.page else { return }
+        
+        // 更新当前页面
+        viewState.currentPage = page
+        
+        // 通知PDF视图跳转到指定页面
+        NotificationCenter.default.post(
+            name: .pdfShouldNavigateToPage,
+            object: nil,
+            userInfo: ["page": page]
+        )
+    }
+    
+    private func handleDrop(_ droppedItems: [EditablePDFOutline]) -> Bool {
+        guard let droppedItem = droppedItems.first else { return false }
+        
+        // 将拖拽的项目作为子项添加到当前项目
+        outlineManager.addChildItem(droppedItem, to: item)
+        return true
+    }
+}
+
+// MARK: - 右键菜单
+struct OutlineItemContextMenu: View {
+    @ObservedObject var outlineItem: EditablePDFOutline
+    let outlineManager: EditableOutlineManager
+    let currentPage: PDFPage?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button("添加子目录") {
+                addChildOutline()
+            }
+            
+            Divider()
+            
+            Button("重命名") {
+                outlineItem.isEditing = true
+            }
+            
+            Divider()
+            
+            Button("删除") {
+                outlineManager.removeItem(outlineItem)
+            }
+            .foregroundColor(.red)
+        }
+        .padding(8)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
+        .shadow(radius: 4)
+    }
+    
+    private func addChildOutline() {
+        let currentPageLabel = if let currentPage = currentPage {
+            "第 \(currentPage.label ?? "?") 页"
+        } else {
+            "新子目录"
+        }
+        
+        let newChild = EditablePDFOutline(
+            label: currentPageLabel,
+            page: currentPage
+        )
+        outlineManager.addChildItem(newChild, to: outlineItem)
+    }
+}
+
+// MARK: - 弹出式右键菜单
+struct OutlineContextMenu: View {
+    @ObservedObject var outlineItem: EditablePDFOutline
+    let outlineManager: EditableOutlineManager
+    let currentPage: PDFPage?
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(action: {
+                addChildOutline()
+                onDismiss()
+            }) {
+                HStack {
+                    Image(systemName: "plus.circle")
+                    Text("添加子目录")
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Button(action: {
+                outlineItem.isEditing = true
+                onDismiss()
+            }) {
+                HStack {
+                    Image(systemName: "pencil")
+                    Text("重命名")
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Button(action: {
+                outlineManager.removeItem(outlineItem)
+                onDismiss()
+            }) {
+                HStack {
+                    Image(systemName: "trash")
+                    Text("删除")
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .foregroundColor(.red)
+        }
+        .padding(12)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
+        .shadow(radius: 4)
+    }
+    
+    private func addChildOutline() {
+        let currentPageLabel = if let currentPage = currentPage {
+            "第 \(currentPage.label ?? "?") 页"
+        } else {
+            "新子目录"
+        }
+        
+        let newChild = EditablePDFOutline(
+            label: currentPageLabel,
+            page: currentPage
+        )
+        outlineManager.addChildItem(newChild, to: outlineItem)
+    }
+}
+
+// MARK: - 拖拽支持
+extension EditablePDFOutline: Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .data)
+    }
+}
+
+// MARK: - 原版PDF目录项视图（保持兼容性）
 struct PDFOutlineItemView: View {
     let item: PDFOutline
     let level: Int
