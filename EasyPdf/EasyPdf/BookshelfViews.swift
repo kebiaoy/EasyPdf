@@ -110,7 +110,7 @@ struct PDFViewerView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let pdfDocument = viewState.document {
-                CachedPDFKitView(
+                PDFSplitView(
                     fileURL: fileURL,
                     document: pdfDocument,
                     viewState: $viewState
@@ -351,6 +351,14 @@ class PDFCoordinator: NSObject {
             name: .PDFViewDisplayModeChanged,
             object: pdfView
         )
+        
+        // 监听目录导航请求
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(navigateToPage(_:)),
+            name: .pdfShouldNavigateToPage,
+            object: nil
+        )
     }
     
     @objc private func pageChanged() {
@@ -382,6 +390,17 @@ class PDFCoordinator: NSObject {
         print("显示模式已更改为: \(pdfView.displayMode.rawValue)")
     }
     
+    @objc private func navigateToPage(_ notification: Notification) {
+        guard let pdfView = pdfView,
+              let userInfo = notification.userInfo,
+              let page = userInfo["page"] as? PDFPage else { return }
+        
+        DispatchQueue.main.async {
+            pdfView.go(to: page)
+            print("PDF导航到页面: \(page.label ?? "未知")")
+        }
+    }
+    
     private func saveState() {
         // 延迟保存以避免频繁写入
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -392,6 +411,305 @@ class PDFCoordinator: NSObject {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
+}
+
+// MARK: - PDF分割视图
+struct PDFSplitView: View {
+    let fileURL: URL
+    let document: PDFDocument
+    @Binding var viewState: PDFViewState
+    
+    @State private var leftPanelWidth: CGFloat = 250
+    @State private var containerWidth: CGFloat = 800
+    @State private var showOutline: Bool = true
+    
+    private let minPanelWidth: CGFloat = 150
+    
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                if showOutline {
+                    // 左侧PDF目录面板
+                    PDFOutlineView(document: document, viewState: $viewState)
+                        .frame(width: leftPanelWidth)
+                        .background(Color(NSColor.controlBackgroundColor))
+                    
+                    // 分割线
+                    PDFSplitterView(
+                        offset: $leftPanelWidth,
+                        containerWidth: geometry.size.width,
+                        minWidth: minPanelWidth
+                    )
+                }
+                
+                // 右侧PDF内容区域
+                VStack(spacing: 0) {
+                    // 工具栏
+                    PDFToolbarView(
+                        showOutline: $showOutline,
+                        viewState: $viewState
+                    )
+                    
+                    // PDF查看器
+                    CachedPDFKitView(
+                        fileURL: fileURL,
+                        document: document,
+                        viewState: $viewState
+                    )
+                }
+            }
+            .onAppear {
+                containerWidth = geometry.size.width
+                leftPanelWidth = min(leftPanelWidth, geometry.size.width * 0.3)
+            }
+            .onChange(of: geometry.size.width) { newWidth in
+                containerWidth = newWidth
+                // 确保左面板宽度不超过容器宽度的40%
+                let maxLeftWidth = newWidth * 0.4
+                if leftPanelWidth > maxLeftWidth {
+                    leftPanelWidth = maxLeftWidth
+                }
+            }
+        }
+    }
+}
+
+// MARK: - PDF分割线
+struct PDFSplitterView: View {
+    @Binding var offset: CGFloat
+    let containerWidth: CGFloat
+    let minWidth: CGFloat
+    
+    @State private var isDragging = false
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+            .frame(width: 1)
+            .background(
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 8) // 更大的点击区域
+            )
+            .onHover { hovering in
+                if hovering {
+                    NSCursor.resizeLeftRight.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
+            }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        isDragging = true
+                        let newOffset = offset + value.translation.width
+                        let maxOffset = containerWidth * 0.6
+                        offset = max(minWidth, min(maxOffset, newOffset))
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                    }
+            )
+            .background(isDragging ? Color.blue.opacity(0.3) : Color.clear)
+    }
+}
+
+// MARK: - PDF工具栏
+struct PDFToolbarView: View {
+    @Binding var showOutline: Bool
+    @Binding var viewState: PDFViewState
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            // 切换目录显示
+            Button(action: {
+                showOutline.toggle()
+            }) {
+                Image(systemName: showOutline ? "sidebar.left" : "sidebar.left.closed")
+                    .font(.system(size: 16))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .help("切换目录面板")
+            
+            Divider()
+                .frame(height: 16)
+            
+            // PDF页面信息
+            if let currentPage = viewState.currentPage,
+               let document = viewState.document {
+                let pageIndex = document.index(for: currentPage)
+                Text("\(pageIndex + 1) / \(document.pageCount)")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            // 缩放控制（可以后续添加）
+            Text("100%")
+                .font(.system(.caption, design: .monospaced))
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(NSColor.controlBackgroundColor))
+        .border(Color.gray.opacity(0.2), width: 0.5)
+    }
+}
+
+// MARK: - PDF目录视图
+struct PDFOutlineView: View {
+    let document: PDFDocument
+    @Binding var viewState: PDFViewState
+    
+    @State private var outlineItems: [PDFOutline] = []
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // 目录标题
+            HStack {
+                Text("目录")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(NSColor.controlBackgroundColor))
+            .border(Color.gray.opacity(0.2), width: 0.5)
+            
+            // 目录内容
+            if outlineItems.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 32))
+                        .foregroundColor(.secondary)
+                    Text("此PDF没有目录")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(outlineItems.enumerated()), id: \.offset) { index, item in
+                            PDFOutlineItemView(
+                                item: item,
+                                level: 0,
+                                viewState: $viewState
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+        .onAppear {
+            loadOutline()
+        }
+    }
+    
+    private func loadOutline() {
+        guard let outline = document.outlineRoot else {
+            outlineItems = []
+            return
+        }
+        
+        var items: [PDFOutline] = []
+        for i in 0..<outline.numberOfChildren {
+            if let child = outline.child(at: i) {
+                items.append(child)
+            }
+        }
+        outlineItems = items
+    }
+}
+
+// MARK: - PDF目录项视图
+struct PDFOutlineItemView: View {
+    let item: PDFOutline
+    let level: Int
+    @Binding var viewState: PDFViewState
+    
+    @State private var isExpanded: Bool = true
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            // 当前项
+            HStack(spacing: 4) {
+                // 缩进
+                if level > 0 {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: CGFloat(level * 16))
+                }
+                
+                // 展开/折叠按钮
+                if item.numberOfChildren > 0 {
+                    Button(action: {
+                        isExpanded.toggle()
+                    }) {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 16, height: 16)
+                } else {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: 16, height: 16)
+                }
+                
+                // 标题
+                Button(action: {
+                    navigateToItem()
+                }) {
+                    Text(item.label ?? "未命名")
+                        .font(.system(size: 12))
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.vertical, 2)
+            
+            // 子项目
+            if isExpanded && item.numberOfChildren > 0 {
+                ForEach(0..<item.numberOfChildren, id: \.self) { index in
+                    if let child = item.child(at: index) {
+                        PDFOutlineItemView(
+                            item: child,
+                            level: level + 1,
+                            viewState: $viewState
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    private func navigateToItem() {
+        guard let destination = item.destination,
+              let page = destination.page else { return }
+        
+        // 更新当前页面
+        viewState.currentPage = page
+        
+        // 通知PDF视图跳转到指定页面
+        NotificationCenter.default.post(
+            name: .pdfShouldNavigateToPage,
+            object: nil,
+            userInfo: ["page": page]
+        )
+    }
+}
+
+// MARK: - 通知扩展
+extension NSNotification.Name {
+    static let pdfShouldNavigateToPage = NSNotification.Name("PDFShouldNavigateToPage")
 }
 
 // MARK: - 原版PDFKit包装器（保持兼容性）
